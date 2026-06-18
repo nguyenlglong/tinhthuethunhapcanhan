@@ -1,5 +1,5 @@
 import streamlit as st
-
+st.image("logo.jpg.jpg")
 # Tiêu đề ứng dụng
 st.title("💰 Ứng dụng tính thuế thu nhập cá nhân_Đề tài 1_Nguyễn Lê Gia Long")
 
