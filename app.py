@@ -1,20 +1,35 @@
 import streamlit as st
 st.image("logo.jpg.jpg")
-# Tiêu đề ứng dụng
+# ==========================
+# TIÊU ĐỀ
+# ==========================
 st.title("💰 Ứng dụng tính thuế thu nhập cá nhân_Đề tài 1_Nguyễn Lê Gia Long")
+st.write("Tính thuế TNCN từ lương Gross theo quy định hiện hành.")
 
-# Nhập dữ liệu
-thu_nhap = st.number_input(
-    "Nhập thu nhập tính thuế hàng tháng (triệu đồng)",
+# ==========================
+# NHẬP DỮ LIỆU
+# ==========================
+gross_salary = st.number_input(
+    "Nhập lương Gross (triệu đồng/tháng)",
     min_value=0.0,
-    value=20.0
+    value=20.0,
+    step=0.5
 )
 
-# Hàm tính thuế TNCN theo biểu lũy tiến từng phần
-def tinh_thue_tncn(tn):
-    thue = 0
+dependents = st.number_input(
+    "Nhập số người phụ thuộc",
+    min_value=0,
+    value=0,
+    step=1
+)
 
-    bac_thue = [
+# ==========================
+# HÀM TÍNH THUẾ TNCN
+# ==========================
+def calculate_tax(taxable_income):
+    tax = 0
+
+    brackets = [
         (5, 0.05),
         (10, 0.10),
         (18, 0.15),
@@ -24,30 +39,83 @@ def tinh_thue_tncn(tn):
         (float("inf"), 0.35)
     ]
 
-    muc_duoi = 0
+    lower_limit = 0
 
-    for muc_tren, ty_le in bac_thue:
-        if tn > muc_duoi:
-            phan_chiu_thue = min(tn, muc_tren) - muc_duoi
-            thue += phan_chiu_thue * ty_le
-            muc_duoi = muc_tren
+    for upper_limit, rate in brackets:
+        if taxable_income > lower_limit:
+            taxable_part = min(taxable_income, upper_limit) - lower_limit
+            tax += taxable_part * rate
+            lower_limit = upper_limit
         else:
             break
 
-    return thue
+    return tax
 
-# Nút tính toán
-if st.button("Tính thuế"):
+# ==========================
+# NÚT TÍNH TOÁN
+# ==========================
+if st.button("Tính thuế TNCN"):
 
-    thue = tinh_thue_tncn(thu_nhap)
-    thu_nhap_sau_thue = thu_nhap - thue
+    # Bảo hiểm người lao động đóng
+    bhxh = gross_salary * 0.08   # 8%
+    bhyt = gross_salary * 0.015  # 1.5%
+    bhtn = gross_salary * 0.01   # 1%
 
+    total_insurance = bhxh + bhyt + bhtn
+
+    # Giảm trừ gia cảnh
+    personal_deduction = 11.0
+    dependent_deduction = dependents * 4.4
+
+    # Thu nhập tính thuế
+    taxable_income = (
+        gross_salary
+        - total_insurance
+        - personal_deduction
+        - dependent_deduction
+    )
+
+    taxable_income = max(0, taxable_income)
+
+    # Thuế TNCN
+    personal_income_tax = calculate_tax(taxable_income)
+
+    # Lương thực nhận
+    net_salary = (
+        gross_salary
+        - total_insurance
+        - personal_income_tax
+    )
+
+    # ==========================
+    # HIỂN THỊ KẾT QUẢ
+    # ==========================
     st.success("Kết quả tính toán")
 
+    st.subheader("📋 Chi tiết")
+
+    st.write(f"BHXH (8%): **{bhxh:,.2f} triệu đồng**")
+    st.write(f"BHYT (1.5%): **{bhyt:,.2f} triệu đồng**")
+    st.write(f"BHTN (1%): **{bhtn:,.2f} triệu đồng**")
+
+    st.write(f"Tổng bảo hiểm: **{total_insurance:,.2f} triệu đồng**")
+
     st.write(
-        f"📌 Thuế thu nhập cá nhân phải nộp: **{thue:,.2f} triệu đồng**"
+        f"Giảm trừ bản thân: **{personal_deduction:,.2f} triệu đồng**"
     )
 
     st.write(
-        f"📌 Thu nhập sau thuế: **{thu_nhap_sau_thue:,.2f} triệu đồng**"
+        f"Giảm trừ người phụ thuộc: **{dependent_deduction:,.2f} triệu đồng**"
+    )
+
+    st.write(
+        f"Thu nhập tính thuế: **{taxable_income:,.2f} triệu đồng**"
+    )
+
+    st.write(
+        f"Thuế TNCN phải nộp: **{personal_income_tax:,.2f} triệu đồng**"
+    )
+
+    st.success(
+        f"💵 Lương NET thực nhận: {net_salary:,.2f} triệu đồng/tháng"
     )
